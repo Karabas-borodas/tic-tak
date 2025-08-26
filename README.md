@@ -1,108 +1,111 @@
-## Project Backend 05 — Go_Bootcamp
-Резюме: в этом проекте ты научишься работать с jwt-авторизацией и расширишь возможности веб-приложение на языке **Go** с использованием **net/http**.
+# Project Backend 05 — Go_Bootcamp
 
-💡 [Нажми сюда](https://new.oprosso.net/p/4cb31ec3f47a4596bc758ea1861fb624), **чтобы поделиться с нами обратной связью на этот проект**. Это анонимно и поможет нашей команде сделать обучение лучше. Рекомендуем заполнить опрос сразу после выполнения проекта.
+**Summary:** In this project, you will learn how to work with JWT-based authorization and extend the functionality of your Go web application using the net/http package.
 
-## Содержание
- 1. [Chapter I](#chapter-i)   
-     - [Инструкция](#инструкция)   
- 2. [Chapter II](#chapter-ii)  
-     - [Общая информация](#общая-информация)  
-         - [Токен, сессионный токен, токен обновления](#токен-сессионный-токен-токен-обновления)  
- 3. [Chapter III](#chapter-iii)      
-     - [Задание 1. Изменение basic-авторизации на jwt](#задание-1-изменение-basic-авторизации-на-jwt)    
-     - [Задание 2. Добавление поддержки истории игр](#задание-2-добавление-поддержки-истории-игр)  
-     - [Задание 3. Добавление поддержки таблицы лидеров](#задание-3-добавление-поддержки-таблицы-лидеров)    
+💡 [Click here](https://new.oprosso.net/p/4cb31ec3f47a4596bc758ea1861fb624) to give us feedback on this project. It’s anonymous and will help our team improve the learning experience. We recommend completing the survey right after finishing the project.
+
+## Table of Contents
+
+  - [Chapter I](#chapter-i)
+    - [Instructions](#instructions)
+  - [Chapter II](#chapter-ii)
+    - [General Information](#general-information)
+  - [Chapter III](#chapter-iii)
+    - [Project: Tic-Tac-Toe](#project-tic-tac-toe)
+    - [Task 1: Replace Basic Authorization with JWT](#task-1-replace-basic-authorization-with-jwt)
+    - [Task 2: Game History Support](#task-2-game-history-support)
+    - [Task 3: Leaderboard Support](#task-3-leaderboard-support)
 
 ## Chapter I
-## Инструкция
 
-1. На протяжении всего курса тебя будет сопровождать чувство неопределенности и острого дефицита информации — это нормально. Не забывай, что информация в репозитории и Google всегда с тобой. Как и пиры, и Rocket.Chat. Общайся. Ищи. Опирайся на здравый смысл. Не бойся ошибиться.
-2. Будь внимателен к источникам информации. Проверяй. Думай. Анализируй. Сравнивай. 
-3. Внимательно читай задания. Перечитай несколько раз. 
-4. Читать примеры тоже лучше внимательно. В них может быть что-то, что не указано в явном виде в самом задании.
-5. Тебе могут встретиться несоответствия, когда что-то новое в условиях задачи или примере противоречит уже известному. Если встретилось такое — попробуй разобраться. Если не получилось — запиши вопрос в открытые вопросы и выясни в процессе работы. Не оставляй открытые вопросы неразрешенными. 
-6. Если задание кажется непонятным или невыполнимым — так только кажется. Попробуй его декомпозировать. Скорее всего, отдельные части станут понятными. 
-7. На пути тебе встретятся самые разные задания. Те, что помечены звездочкой (\*) — подходят для более дотошных. Они повышенной сложности и необязательны к выполнению. Но если ты их сделаешь, то получишь дополнительный опыт и знания.
-8. Не пытайся обмануть систему и окружающих. В первую очередь ты обманешь себя.
-9. Есть вопрос? Спроси соседа справа. Если это не помогло — соседа слева.
-10. Когда пользуешься помощью — всегда разбирайся до конца: почему, как и зачем. Иначе помощь не будет иметь смысла.
-11. Всегда делай push только в ветку develop! Ветка master будет проигнорирована. Работай в директории src.
-12. В твоей директории не должно быть иных файлов, кроме тех, что обозначены в заданиях.
+### Instructions
+
+1. Throughout this course, you will often feel uncertain and experience a lack of information — that’s normal. Don’t forget that the repository and Google are always at your disposal. So are your peers and Rocket.Chat. Communicate. Search. Use common sense. Don’t be afraid to make mistakes.
+2. Be mindful of your information sources. Double-check. Think. Analyze. Compare.
+3. Read the assignment carefully. Then read it again.
+4. Read the examples carefully as well. They may contain important details that aren’t explicitly stated in the instructions.
+5. You may encounter inconsistencies — something new in the task or example might contradict what you’ve already seen. If that happens, try to figure it out. If you can’t, write your question down under “Open Questions” and try to resolve it during the process. Don’t leave open questions unanswered.
+6. If the task seems unclear or unachievable — it only seems that way. Try breaking it down. Most likely, individual parts will become clearer.
+7. You’ll encounter various types of tasks. Those marked with an asterisk (\*) are optional and more advanced. They’re not required, but completing them will give you extra experience and knowledge.
+8. Don’t try to cheat the system or others. You’ll only be cheating yourself.
+9. Have a question? Ask the person to your right. If that doesn’t help, ask the one to your left.
+10. When receiving help, always make sure you understand the what, how, and why. Otherwise, the help won’t be meaningful.
+11. Always push your changes to the develop branch only! The master branch will be ignored. Work in the src directory.
+12. Your directory should contain only those files specified in the assignment.
 
 ## Chapter II
-## Общая информация
-### Токен, сессионный токен, токен обновления
 
-**Токен** является уникальной последовательностью символов и заменяет собой логин и пароль пользователя для предотвращения утечек конфиденциальной информации. Токены имеют определенное время действия, по истечении которого перестают работать.
+### General Information
 
-**Сессионный токен** предоставляет пользователю права на выполнение доступных ему действий в течение сессии. Является многоразовым и имеет короткий срок действия.
+**Token, Session Token, Refresh Token**
 
-**Токен обновления** продлевает срок действия сессионного токена. Является одноразовым и имеет длительный срок действия.
+A **token** is a unique string of characters that replaces the user’s login and password to prevent leakage of confidential information. Tokens have a limited lifespan after which they become invalid.
 
-## Темы для изучения:
+A **session token** grants the user rights to perform actions available to them during a session. It is reusable and has a short expiration time.
 
-- веб-приложение;
-- jwt-авторизация;
-- PostgreSQL;
-- net/http.
+A **refresh token** extends the validity period of a session token. It is single-use and has a long expiration time.
+
+**Topics to study:**
+
+- Web applications
+- JWT authorization
+- PostgreSQL
+- net/http
 
 ## Chapter III
-### Проект: Крестики-Нолики
-Используй проект для серверной части с предыдущей недели T04.
 
-### Задание 1. Изменение basic-авторизации на jwt
+### Project: Tic-Tac-Toe
 
-- Создай модель JwtRequest, у которой будет логин и пароль.
-- Создай модель JwtResponse, у которой будет тип, accessToken, refreshToken.
-- Создай модель RefreshJwtRequest, у которой будет refreshToken.
+Use the server-side project from the previous week, **T04**.
 
-- Реализуй структуру JwtProvider, у которой есть следующие методы:
-  - Метод генерации accessToken по User, в токен необходимо сохранить информацию о UUID;
-  - Метод генерации refreshToken по User, в токен необходимо сохранить информацию о UUID;
-  - Метод валидации accessToken;
-  - Метод валидации refreshToken;
-  - Метод получения UUID из токена.
+### Task 1: Replace Basic Authorization with JWT
 
-- Обнови сервис авторизации, который использует UserService, JwtProvider для реализации следующих методов:
-  - Измени метод авторизации, теперь он принимает JwtRequest и возвращает JwtResponse.
-  - Создай метод обновления accessToken, который принимает refreshToken и возвращает JwtResponse.
-  - Создай метод обновления refreshToken, который принимает refreshToken и возвращает JwtResponse.
+- Create a JwtRequest model containing login and password.
+- Create a JwtResponse model containing type, accessToken, and refreshToken.
+- Create a RefreshJwtRequest model containing refreshToken.
+- Implement a JwtProvider structure with the following methods:
+  - A method to generate an accessToken based on a User; the token must include the user’s UUID.
+  - A method to generate a refreshToken based on a User; the token must include the user’s UUID.
+  - A method to validate the accessToken.
+  - A method to validate the refreshToken.
+  - A method to extract the UUID from a token.
+- Update the **authorization service**, which uses UserService and JwtProvider, to include:
+  - A modified authorization method that now accepts a JwtRequest and returns a JwtResponse.
+  - A method to refresh the accessToken, which accepts a refreshToken and returns a JwtResponse.
+  - A method to refresh the refreshToken, which accepts a refreshToken and returns a JwtResponse.
+- Update the **authorization controller**:
+  - Add or modify endpoints for:
+    - user authorization
+    - accessToken refresh
+    - refreshToken refresh
+- Change the logic for determining the authorized user:
+  - Extract the token from the Authorization header, which contains Bearer {accessToken}.
+  - Use JwtProvider to validate the token.
+  - Set the authorization using the sign method of the JWT extension for Request.
+  - Remove Basic Authorization from Authentication.
+  - Add Bearer Authorization to Authentication.
+  - Use JwtProvider to validate the token.
+  - If validation fails, respond with status code 401 and do not execute the request.
+  - Allow unauthenticated access to the accessToken refresh endpoint.
+  - Add an endpoint to retrieve user info based on the accessToken.
 
-- Обнови контроллер авторизации, у которого добавятся или изменятся endpoint'ы:
-  - для авторизации пользователя;
-  - для обновления accessToken;
-  - для обновления refreshToken.
+### Task 2: Game History Support
 
-- Измени логику определения авторизованного пользователя:
-  - Получи токен из заголовка Authorization, который содержит «Bearer {accessToken}».
-  - С помощью JwtProvider провалидируй токен.
-  - Установи авторизацию с помощью метода sign у расширения jwt для Request.
+- Add a creation date field to the game model.
+- Define a database query that retrieves all completed games by user UUID.
+- A game is considered completed if it has one of the following states:
+  - Victory of the player with UUID;
+  - Draw.
+- In the game service, add a method that retrieves all completed games by the user’s UUID.
+- Add an endpoint to retrieve all completed games based on the accessToken, accessible only to authorized users.
 
-- Убери basic-авторизацию из Authentication.
-- Добавь bearer-авторизацию в Authentication.
-- Используй JwtProvider для валидации токена.
-- Если валидация прошла с ошибкой, то добавь в ответ код 401 и не выполняй запрос.
+### Task 3: Leaderboard Support
 
-- Добавь доступ без авторизации к endpoint'у обновления accessToken.
-- Добавь endpoint для получения информации о пользователе по accessToken.
-
-### Задание 2. Добавление поддержки истории игр
-- Добавь в модель игры дату ее создания.
-- Опиши запрос базы данных для получения всех завершенных игр по UUID пользователя.
-- Игра считается завершенной, если у нее одно из состояний:
-  - Победа игрока с UUID;
-  - Ничья.
-- В сервис для работы с играми добавь метод для получения всех завершенных игр по UUID пользователя.
-- Добавь endpoint для получения всех завершенных игр по accessToken, доступ к которому есть только у авторизованных пользователей.
-
-### Задание 3. Добавление поддержки таблицы лидеров
-
-- Создай модель для информации о выигранных играх, в которой будет UUID пользователя и соотношение побед.
-- Опиши запрос базы данных, в котором:
-  - Получи соотношение количества выигранных игр к поражениям и ничьим для каждого пользователя.
-  - Отсортируй соотношение побед по убыванию.
-  - Выбери первые N записей, в каждой из которых будет UUID пользователя и соотношение побед.
-- В сервис для работы с играми добавь получение первых N лучших игроков.
-- Добавь endpoint для получения первых N лучших игроков, который принимает N(количество лучших игроков) и возвращает список лучших игроков (UUID и логин) с их соотношением побед.
-- Endpoint для получения лучших игроков должен быть доступен только авторизованным пользователям.
+- Create a model for information about won games, containing the user's UUID and their win ratio.
+- Define a database query that:
+  - Calculates the ratio of the number of wins to losses and draws for each user.
+  - Sorts the win ratios in descending order.
+  - Selects the top N records, each containing the user's UUID and win ratio.
+- In the game service, add a method to retrieve the top N players.
+- Add an endpoint that accepts N (number of top players) and returns a list of the best players (UUID and login) with their win ratios.
+- The endpoint for retrieving top players must be accessible only to authorized users.
