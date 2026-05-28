@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic-Tac-Toe Ultra</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #8b5cf6;
+    --primary-glow: rgba(139, 92, 246, 0.5);
+    --secondary: #ec4899;
+    --bg-dark: #0f172a;
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+    color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    align-items: center; justify-content: center;
+    overflow-x: hidden;
+  }
+
+  .app-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    perspective: 1000px;
+  }
+
+  .card {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 32px;
+    padding: 40px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem; font-weight: 900;
+    text-align: center;
+    background: linear-gradient(to right, #a78bfa, #f472b6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 30px;
+  }
+
+  /* Auth Section */
+  .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+  .tab {
+    flex: 1; padding: 10px; border-radius: 12px; cursor: pointer;
+    text-align: center; background: rgba(255,255,255,0.05);
+    border: 1px solid transparent; transition: 0.3s;
+  }
+  .tab.active { background: rgba(139,92,246,0.2); border-color: var(--primary); }
+
+  .input-group { margin-bottom: 15px; text-align: left; }
+  label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; margin-left: 5px; }
+  input {
+    width: 100%; padding: 14px 20px; border-radius: 14px;
+    background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);
+    color: #fff; font-family: inherit; transition: 0.3s;
+  }
+  input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+  /* Buttons */
+  .btn {
+    width: 100%; padding: 16px; border-radius: 16px; border: none;
+    font-weight: 700; cursor: pointer; transition: 0.3s;
+    font-family: 'Outfit', sans-serif; font-size: 1rem;
+    margin-top: 10px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), #6366f1);
+    color: white; box-shadow: 0 10px 15px -3px var(--primary-glow);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px var(--primary-glow); }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+  .btn:disabled { opacity: 0.5; transform: none !important; cursor: default; }
+
+  /* Lobby */
+  .lobby-item {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 15px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: 0.2s;
+  }
+  .lobby-item:hover { background: rgba(255,255,255,0.07); }
+  .lobby-info { text-align: left; }
+  .lobby-info span { display: block; font-size: 0.7rem; color: #64748b; }
+
+  /* Board */
+  .board-container { display: none; }
+  .board {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin: 30px auto; width: 300px;
+  }
+  .cell {
+    aspect-ratio: 1/1; background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border); border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; font-weight: 900; cursor: pointer; transition: 0.2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .cell:hover:not(.taken) { background: rgba(255,255,255,0.08); transform: scale(1.05); }
+  .cell.taken { cursor: default; }
+  .cell.x { color: var(--primary); text-shadow: 0 0 20px var(--primary-glow); }
+  .cell.o { color: var(--secondary); text-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+
+  .status-bar {
+    text-align: center; padding: 15px; border-radius: 16px;
+    background: rgba(255,255,255,0.05); margin-top: 20px;
+    font-weight: 600; color: #94a3b8;
+  }
+  .status-bar.active { color: #fff; background: rgba(139,92,246,0.1); border: 1px solid var(--primary); }
+
+  .hidden { display: none; }
+  .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .player-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.8rem; color: #94a3b8; }
+  .badge { padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Auth Card -->
+  <div id="authCard" class="card fade-in">
+    <h1>TIC TAC TOE</h1>
+    <div class="auth-tabs">
+      <div class="tab active" id="tabLogin">Вход</div>
+      <div class="tab" id="tabRegister">Регистрация</div>
+    </div>
+    <div class="input-group">
+      <label>Логин</label>
+      <input type="text" id="username" placeholder="vlad_admin">
+    </div>
+    <div class="input-group">
+      <label>Пароль</label>
+      <input type="password" id="password" placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary" id="btnAuth">Войти</button>
+  </div>
+
+  <!-- Lobby Card -->
+  <div id="lobbyCard" class="card hidden">
+    <h1>LOBBY</h1>
+    <div class="player-info">
+      <span id="playerLogin">...</span>
+      <span class="badge" id="playerUUID" style="font-size: 0.6rem;">...</span>
+    </div>
+    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+      <button class="btn btn-primary" id="btnCreatePVE" style="flex: 1">VS AI</button>
+      <button class="btn btn-secondary" id="btnCreatePVP" style="flex: 1">New PVP</button>
+    </div>
+    <h3 style="text-align: left; margin-bottom: 15px; font-size: 1rem; color: #94a3b8">Доступные игры</h3>
+    <div id="lobbyList">
+      <!-- Games here -->
+    </div>
+    <button class="btn btn-secondary" id="btnLogout" style="margin-top: 30px; font-size: 0.8rem">Выйти</button>
+  </div>
+
+  <!-- Game Card -->
+  <div id="gameCard" class="card hidden">
+    <div class="player-info">
+      <span id="gameMode">...</span>
+      <span class="badge" id="gameIdDisplay" style="font-size: 0.6rem;">...</span>
+    </div>
+    <div class="board" id="board">
+      <!-- Cells here -->
+    </div>
+    <div class="status-bar" id="statusBar">Ожидание...</div>
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button class="btn btn-primary" id="btnSendMove" disabled>Отправить</button>
+      <button class="btn btn-secondary" id="btnBack">В лобби</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentUser = null;
+  let currentGame = null;
+  let selectedCell = null;
+  let authMode = 'login';
+  let lobbyInterval = null;
+  let gameInterval = null;
+
+  // DOM Elements
+  const els = {
+    authCard: document.getElementById('authCard'),
+    lobbyCard: document.getElementById('lobbyCard'),
+    gameCard: document.getElementById('gameCard'),
+    btnAuth: document.getElementById('btnAuth'),
+    tabLogin: document.getElementById('tabLogin'),
+    tabRegister: document.getElementById('tabRegister'),
+    username: document.getElementById('username'),
+    password: document.getElementById('password'),
+    lobbyList: document.getElementById('lobbyList'),
+    board: document.getElementById('board'),
+    statusBar: document.getElementById('statusBar'),
+    btnSendMove: document.getElementById('btnSendMove'),
+    playerLogin: document.getElementById('playerLogin'),
+    playerUUID: document.getElementById('playerUUID'),
+    gameMode: document.getElementById('gameMode'),
+    gameIdDisplay: document.getElementById('gameIdDisplay')
+  };
+
+  // Auth Logic
+  els.tabLogin.onclick = () => setAuthMode('login');
+  els.tabRegister.onclick = () => setAuthMode('register');
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    els.tabLogin.classList.toggle('active', mode === 'login');
+    els.tabRegister.classList.toggle('active', mode === 'register');
+    els.btnAuth.textContent = mode === 'login' ? 'Войти' : 'Создать аккаунт';
+  }
+
+  // Helper for authenticated fetch
+  async function apiFetch(url, options = {}) {
+    if (currentUser && currentUser.auth) {
+      options.headers = options.headers || {};
+      options.headers['Authorization'] = `Basic ${currentUser.auth}`;
+    }
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+      alert("Сессия истекла или неверные данные. Войдите заново.");
+      logout();
+      throw new Error("Unauthorized");
+    }
+    return res;
+  }
+
+  els.btnAuth.onclick = async () => {
+    const login = els.username.value;
+    const pass = els.password.value;
+    if (!login || !pass) return alert('Заполните поля');
+
+    if (authMode === 'register') {
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login, password: pass })
+      });
+      if (res.ok) {
+        alert('Успешно! Теперь войдите.');
+        setAuthMode('login');
+      } else alert(await res.text());
+    } else {
+      const auth = btoa(`${login}:${pass}`);
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${auth}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        currentUser = { login, uuid: data.uuid, auth };
+        showLobby();
+      } else alert('Ошибка входа: неверный логин или пароль');
+    }
+  };
+
+  function showLobby() {
+    els.authCard.classList.add('hidden');
+    els.gameCard.classList.add('hidden');
+    els.lobbyCard.classList.remove('hidden');
+    els.playerLogin.textContent = currentUser.login;
+    els.playerUUID.textContent = currentUser.uuid;
+    startLobbySync();
+  }
+
+  async function startLobbySync() {
+    refreshLobby();
+    clearInterval(lobbyInterval);
+    lobbyInterval = setInterval(refreshLobby, 3000);
+  }
+
+  async function refreshLobby() {
+    const res = await apiFetch('/check');
+    if (!res.ok) return;
+    const games = await res.json() || [];
+    els.lobbyList.innerHTML = games.length ? '' : '<p style="color:#475569">Нет доступных игр</p>';
+    games.forEach(g => {
+      const div = document.createElement('div');
+      div.className = 'lobby-item';
+      div.innerHTML = `
+        <div class="lobby-info">
+          <strong>${g.Player1}</strong>
+          <span>ID: ${g.Uuid.slice(0,8)}...</span>
+        </div>
+        <button class="btn btn-secondary" style="width:auto; padding:8px 16px; margin:0" onclick="joinGame('${g.Uuid}')">Join</button>
+      `;
+      els.lobbyList.appendChild(div);
+    });
+  }
+
+  async function joinGame(uuid) {
+    const res = await apiFetch(`/game/${uuid}/join`, { method: 'POST' });
+    if (res.ok) {
+      const game = await res.json();
+      startGameSession(game);
+    } else alert(await res.text());
+  }
+
+  document.getElementById('btnCreatePVE').onclick = () => createGame('PVE');
+  document.getElementById('btnCreatePVP').onclick = () => createGame('PVP');
+
+  async function createGame(type) {
+    const res = await apiFetch('/game/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type })
+    });
+    if (res.ok) {
+      const game = await res.json();
+      startGameSession(game);
+    } else alert(await res.text());
+  }
+
+  function startGameSession(game) {
+    clearInterval(lobbyInterval);
+    currentGame = game;
+    selectedCell = null;
+    els.lobbyCard.classList.add('hidden');
+    els.gameCard.classList.remove('hidden');
+    els.gameMode.textContent = game.game_type;
+    els.gameIdDisplay.textContent = game.uuid.slice(0,8);
+    syncGame();
+    clearInterval(gameInterval);
+    gameInterval = setInterval(syncGame, 2000);
+  }
+
+  async function syncGame() {
+    const res = await apiFetch(`/game/${currentGame.uuid}`);
+    if (!res.ok) return;
+    currentGame = await res.json();
+    renderBoard();
+    updateStatus();
+  }
+
+  function renderBoard() {
+    els.board.innerHTML = '';
+    const m = currentGame.matrix;
+    for(let i=0; i<3; i++) {
+      for(let j=0; j<3; j++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const val = m[i][j];
+        if (val === 1) { cell.textContent = '✕'; cell.classList.add('taken', 'x'); }
+        if (val === 2) { cell.textContent = '◯'; cell.classList.add('taken', 'o'); }
+
+        if (selectedCell && selectedCell.row === i && selectedCell.col === j) {
+          cell.textContent = (currentGame.current_turn_uuid === currentGame.uuidplayer1) ? '✕' : '◯';
+          cell.style.borderColor = 'var(--primary)';
+          cell.style.background = 'rgba(255,255,255,0.1)';
+        }
+
+        cell.onclick = () => {
+          if (val !== 0) return;
+          if (currentGame.status.includes('won') || currentGame.status === 'draw') return;
+          selectedCell = { row: i, col: j };
+          renderBoard();
+          checkCanMove();
+        };
+        els.board.appendChild(cell);
+      }
+    }
+  }
+
+  function checkCanMove() {
+    if (!currentGame || !currentUser) return;
+    
+    const serverTurn = String(currentGame.current_turn_uuid || "").toLowerCase();
+    const myUUID = String(currentUser.uuid || "").toLowerCase();
+    
+    const isMyTurn = (serverTurn === myUUID);
+    
+    console.log("Turn Comparison:", { server: serverTurn, mine: myUUID, match: isMyTurn });
+    els.btnSendMove.disabled = !selectedCell || !isMyTurn;
+  }
+
+  function updateStatus() {
+    const s = currentGame.status;
+    let text = "";
+    let active = false;
+
+    if (s === 'waiting') text = "Ожидание противника...";
+    else if (s === 'turn_p1' || s === 'turn_p2') {
+      const serverTurn = String(currentGame.current_turn_uuid || "").toLowerCase();
+      const myUUID = String(currentUser.uuid || "").toLowerCase();
+      const isMe = (serverTurn === myUUID);
+      text = isMe ? "Ваш ход!" : "Ход противника...";
+      active = isMe;
+    }
+    else if (s === 'won_p1') text = (String(currentGame.uuidplayer1).toLowerCase() === String(currentUser.uuid).toLowerCase()) ? "ПОБЕДА! 🎉" : "Поражение... 😔";
+    else if (s === 'won_p2') text = (String(currentGame.uuidplayer2).toLowerCase() === String(currentUser.uuid).toLowerCase()) ? "ПОБЕДА! 🎉" : "Поражение... 😔";
+    else if (s === 'draw') text = "НИЧЬЯ 🤝";
+
+    els.statusBar.textContent = text;
+    els.statusBar.className = 'status-bar' + (active ? ' active' : '');
+    if (s.includes('won') || s === 'draw') clearInterval(gameInterval);
+    checkCanMove();
+  }
+
+  els.btnSendMove.onclick = async () => {
+    if (!selectedCell) return;
+    const m = currentGame.matrix.map(r => [...r]);
+    m[selectedCell.row][selectedCell.col] = (currentGame.status === 'turn_p1' ? 1 : 2);
+
+    const res = await apiFetch(`/game/${currentGame.uuid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matrix: m })
+    });
+    if (res.ok) {
+      selectedCell = null;
+      syncGame();
+    } else {
+      alert(await res.text());
+    }
+  };
+
+  els.btnBack.onclick = () => {
+    clearInterval(gameInterval);
+    showLobby();
+  };
+
+  function logout() {
+    currentUser = null;
+    clearInterval(lobbyInterval);
+    clearInterval(gameInterval);
+    els.lobbyCard.classList.add('hidden');
+    els.gameCard.classList.add('hidden');
+    els.authCard.classList.remove('hidden');
+  }
+
+  document.getElementById('btnLogout').onclick = logout;
+
+</script>
+</body>
+</html>
