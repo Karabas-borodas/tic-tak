@@ -82,6 +82,26 @@ curl -X POST http://localhost:3002/game/{UUID_ИГРЫ} \
 curl -X GET http://localhost:3002/user/{UUID_ПОЛЬЗОВАТЕЛЯ}
 ```
 
+### 6. История игр и Таблица лидеров (Требуется авторизация)
+
+```bash
+# Получить историю завершенных игр текущего пользователя (с использованием куки)
+curl -X GET http://localhost:3002/games/history \
+  -b cookies.txt
+
+# Или с использованием Bearer токена (accessToken):
+curl -X GET http://localhost:3002/games/history \
+  -H "Authorization: Bearer {UUID_ПОЛЬЗОВАТЕЛЯ}"
+
+# Получить топ-10 лучших игроков
+curl -X GET http://localhost:3002/leaderboard \
+  -b cookies.txt
+
+# Получить топ N лучших игроков (например, топ-5)
+curl -X GET http://localhost:3002/leaderboard/5 \
+  -b cookies.txt
+```
+
 ## Состояния игры (`status`)
 
 - `waiting`: Ожидание второго игрока.

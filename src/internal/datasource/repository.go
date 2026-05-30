@@ -69,6 +69,7 @@ func (g *GameStorage) createDB() error {
 	ALTER TABLE games ADD COLUMN IF NOT EXISTS symbol_p1 TEXT DEFAULT 'X';
 	ALTER TABLE games ADD COLUMN IF NOT EXISTS symbol_p2 TEXT DEFAULT 'O';
 	ALTER TABLE games ADD COLUMN IF NOT EXISTS current_turn_uuid UUID;
+	ALTER TABLE games ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -129,7 +130,11 @@ func (u *UserStorage) createUserDB() error {
 		player TEXT DEFAULT '',
 		uuid UUID UNIQUE NOT NULL,
 		created_at TIMESTAMPTZ DEFAULT now()
-	);`
+	);
+	
+	-- Миграция для существующих таблиц
+	ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -376,10 +381,9 @@ func (g *GameStorage) GetLeaderboard(limit int) ([]domain.LeaderboardEntry, erro
 				COUNT(CASE WHEN (g.status = 'won_p1' AND g.uuidplayer1 = u.uuid) OR (g.status = 'won_p2' AND g.uuidplayer2 = u.uuid) THEN 1 END)::FLOAT
 			) AS win_ratio
 		FROM users u
-		LEFT JOIN games g ON u.uuid = g.uuidplayer1 OR u.uuid = g.uuidplayer2
-		WHERE g.status IN ('won_p1', 'won_p2', 'draw') OR g.uuid IS NULL
+		LEFT JOIN games g ON (u.uuid = g.uuidplayer1 OR u.uuid = g.uuidplayer2) AND g.status IN ('won_p1', 'won_p2', 'draw')
 		GROUP BY u.uuid, u.login
-		ORDER BY win_ratio DESC
+		ORDER BY win_ratio DESC, u.login ASC
 		LIMIT $1;
 	`
 

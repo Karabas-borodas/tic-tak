@@ -117,6 +117,60 @@ func TestHistoryEndpoint(t *testing.T) {
 	}
 }
 
+func TestHistoryEndpointWithBearer(t *testing.T) {
+	storage := &mockStorage{
+		games: []domain.Game{
+			{
+				Uuid:        uuid.New(),
+				Status:      domain.StatusWonP1,
+				Uuidplayer1: uuid.New(),
+				CreatedAt:   time.Now(),
+			},
+		},
+	}
+	userStorage := &mockUserStorage{}
+
+	gameService := domain.NewGameService(storage)
+	userService := domain.NewUserService(userStorage)
+	auth := NewUserAuthenticator(userService)
+
+	req := httptest.NewRequest("GET", "/games/history", nil)
+	w := httptest.NewRecorder()
+
+	userUUID := uuid.New()
+	req.Header.Set("Authorization", "Bearer "+userUUID.String())
+
+	handler := auth.Middleware(func(w http.ResponseWriter, r *http.Request) {
+		ctxUUID := r.Context().Value(UserContextKey).(uuid.UUID)
+		completedGames, err := gameService.GetCompletedGames(ctxUUID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var webGames []GameWeb
+		for _, g := range completedGames {
+			webGames = append(webGames, DomainToWeb(g))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(webGames)
+	})
+
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response []GameWeb
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(response) != 1 {
+		t.Errorf("expected 1 completed game, got %d", len(response))
+	}
+}
+
 func TestLeaderboardEndpoint(t *testing.T) {
 	storage := &mockStorage{}
 	userStorage := &mockUserStorage{}

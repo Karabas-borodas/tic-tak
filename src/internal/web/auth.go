@@ -35,7 +35,11 @@ func (a *UserAuthenticator) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		} else {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader != "" {
-				userUUID, err = a.validateBasicAuth(authHeader)
+				if strings.HasPrefix(authHeader, "Bearer ") {
+					userUUID, err = a.validateBearerAuth(authHeader)
+				} else {
+					userUUID, err = a.validateBasicAuth(authHeader)
+				}
 			} else {
 				err = http.ErrNoCookie
 			}
@@ -80,6 +84,20 @@ func (a *UserAuthenticator) validateBasicAuth(authHeader string) (uuid.UUID, err
 	}
 
 	userUUID, err := a.userService.LoginUser(domain.UserDomain{Login: login, Pass: pass})
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return userUUID, nil
+}
+
+func (a *UserAuthenticator) validateBearerAuth(authHeader string) (uuid.UUID, error) {
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		return uuid.Nil, http.ErrNoCookie
+	}
+
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	userUUID, err := uuid.Parse(token)
 	if err != nil {
 		return uuid.Nil, err
 	}

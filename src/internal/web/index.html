@@ -127,6 +127,58 @@
 
   .player-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.8rem; color: #94a3b8; }
   .badge { padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); color: #fff; }
+
+  /* Tabs for Lobby sections (Games, History, Leaderboard) */
+  .lobby-tabs {
+    display: flex; gap: 8px; margin: 25px 0 15px 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;
+  }
+  .lobby-tab {
+    font-size: 0.85rem; font-weight: 600; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: #94a3b8; transition: 0.2s;
+  }
+  .lobby-tab:hover { color: #fff; background: rgba(255,255,255,0.03); }
+  .lobby-tab.active { color: #fff; background: rgba(139,92,246,0.15); border: 1px solid var(--primary); }
+
+  /* History list styling */
+  .history-item {
+    background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 12px 16px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .history-win { border-left: 4px solid #10b981; }
+  .history-loss { border-left: 4px solid #ef4444; }
+  .history-draw { border-left: 4px solid #6b7280; }
+  
+  .history-details { text-align: left; }
+  .history-details strong { display: block; font-size: 0.9rem; }
+  .history-details span { font-size: 0.7rem; color: #64748b; }
+  
+  .history-status-badge {
+    padding: 4px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  }
+  .badge-win { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+  .badge-loss { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  .badge-draw { background: rgba(107, 114, 128, 0.1); color: #94a3b8; }
+
+  /* Leaderboard styling */
+  .leaderboard-item {
+    background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 12px 16px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .leader-rank {
+    font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 900; width: 24px; text-align: center;
+  }
+  .rank-1 { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+  .rank-2 { color: #94a3b8; }
+  .rank-3 { color: #b45309; }
+  
+  .leader-info { flex: 1; margin-left: 15px; text-align: left; }
+  .leader-info strong { font-size: 0.95rem; }
+  .leader-info span { display: block; font-size: 0.65rem; color: #64748b; }
+  
+  .leader-ratio {
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; color: #a78bfa;
+  }
 </style>
 </head>
 <body>
@@ -157,14 +209,39 @@
       <span id="playerLogin">...</span>
       <span class="badge" id="playerUUID" style="font-size: 0.6rem;">...</span>
     </div>
-    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
       <button class="btn btn-primary" id="btnCreatePVE" style="flex: 1">VS AI</button>
       <button class="btn btn-secondary" id="btnCreatePVP" style="flex: 1">New PVP</button>
     </div>
-    <h3 style="text-align: left; margin-bottom: 15px; font-size: 1rem; color: #94a3b8">Доступные игры</h3>
-    <div id="lobbyList">
-      <!-- Games here -->
+
+    <!-- Tab system for Lobby -->
+    <div class="lobby-tabs">
+      <div class="lobby-tab active" id="tabLobbyList">Доступные игры</div>
+      <div class="lobby-tab" id="tabHistory">Моя история</div>
+      <div class="lobby-tab" id="tabLeaderboard">Лидеры</div>
     </div>
+
+    <!-- Section: Lobby List -->
+    <div id="lobbyListSection" class="fade-in">
+      <div id="lobbyList">
+        <!-- Games here -->
+      </div>
+    </div>
+
+    <!-- Section: Game History -->
+    <div id="historySection" class="hidden fade-in">
+      <div id="historyList" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+        <!-- History here -->
+      </div>
+    </div>
+
+    <!-- Section: Leaderboard -->
+    <div id="leaderboardSection" class="hidden fade-in">
+      <div id="leaderboardList" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+        <!-- Leaderboard here -->
+      </div>
+    </div>
+
     <button class="btn btn-secondary" id="btnLogout" style="margin-top: 30px; font-size: 0.8rem">Выйти</button>
   </div>
 
@@ -192,6 +269,7 @@
   let authMode = 'login';
   let lobbyInterval = null;
   let gameInterval = null;
+  let activeLobbyTab = 'lobbyList';
 
   // DOM Elements
   const els = {
@@ -212,6 +290,35 @@
     gameMode: document.getElementById('gameMode'),
     gameIdDisplay: document.getElementById('gameIdDisplay')
   };
+
+  // Lobby Tab Elements
+  const lobbyTabs = {
+    tabLobbyList: document.getElementById('tabLobbyList'),
+    tabHistory: document.getElementById('tabHistory'),
+    tabLeaderboard: document.getElementById('tabLeaderboard'),
+    lobbyListSection: document.getElementById('lobbyListSection'),
+    historySection: document.getElementById('historySection'),
+    leaderboardSection: document.getElementById('leaderboardSection')
+  };
+
+  lobbyTabs.tabLobbyList.onclick = () => switchLobbyTab('lobbyList');
+  lobbyTabs.tabHistory.onclick = () => switchLobbyTab('history');
+  lobbyTabs.tabLeaderboard.onclick = () => switchLobbyTab('leaderboard');
+
+  function switchLobbyTab(tab) {
+    activeLobbyTab = tab;
+    
+    lobbyTabs.tabLobbyList.classList.toggle('active', tab === 'lobbyList');
+    lobbyTabs.tabHistory.classList.toggle('active', tab === 'history');
+    lobbyTabs.tabLeaderboard.classList.toggle('active', tab === 'leaderboard');
+    
+    lobbyTabs.lobbyListSection.classList.toggle('hidden', tab !== 'lobbyList');
+    lobbyTabs.historySection.classList.toggle('hidden', tab !== 'history');
+    lobbyTabs.leaderboardSection.classList.toggle('hidden', tab !== 'leaderboard');
+    
+    if (tab === 'history') refreshHistory();
+    if (tab === 'leaderboard') refreshLeaderboard();
+  }
 
   // Auth Logic
   els.tabLogin.onclick = () => setAuthMode('login');
@@ -284,22 +391,125 @@
   }
 
   async function refreshLobby() {
-    const res = await apiFetch('/check');
-    if (!res.ok) return;
-    const games = await res.json() || [];
-    els.lobbyList.innerHTML = games.length ? '' : '<p style="color:#475569">Нет доступных игр</p>';
-    games.forEach(g => {
-      const div = document.createElement('div');
-      div.className = 'lobby-item';
-      div.innerHTML = `
-        <div class="lobby-info">
-          <strong>${g.Player1}</strong>
-          <span>ID: ${g.Uuid.slice(0,8)}...</span>
-        </div>
-        <button class="btn btn-secondary" style="width:auto; padding:8px 16px; margin:0" onclick="joinGame('${g.Uuid}')">Join</button>
-      `;
-      els.lobbyList.appendChild(div);
-    });
+    if (activeLobbyTab === 'lobbyList') {
+      const res = await apiFetch('/check');
+      if (!res.ok) return;
+      const games = await res.json() || [];
+      els.lobbyList.innerHTML = games.length ? '' : '<p style="color:#475569; text-align:center; padding: 20px 0;">Нет доступных игр</p>';
+      games.forEach(g => {
+        const div = document.createElement('div');
+        div.className = 'lobby-item';
+        div.innerHTML = `
+          <div class="lobby-info">
+            <strong>${g.Player1}</strong>
+            <span>ID: ${g.Uuid.slice(0,8)}...</span>
+          </div>
+          <button class="btn btn-secondary" style="width:auto; padding:8px 16px; margin:0" onclick="joinGame('${g.Uuid}')">Join</button>
+        `;
+        els.lobbyList.appendChild(div);
+      });
+    } else if (activeLobbyTab === 'history') {
+      refreshHistory();
+    } else if (activeLobbyTab === 'leaderboard') {
+      refreshLeaderboard();
+    }
+  }
+
+  async function refreshHistory() {
+    try {
+      const res = await apiFetch('/games/history');
+      if (!res.ok) return;
+      const games = await res.json() || [];
+      const list = document.getElementById('historyList');
+      list.innerHTML = games.length ? '' : '<p style="color:#475569; text-align:center; padding: 20px 0;">История пуста</p>';
+      
+      games.forEach(g => {
+        const div = document.createElement('div');
+        
+        let isWon = false;
+        let isDraw = false;
+        let outcomeText = "";
+        let borderClass = "";
+        let badgeClass = "";
+        
+        const myUUID = String(currentUser.uuid).toLowerCase();
+        const p1UUID = String(g.uuidplayer1).toLowerCase();
+        const p2UUID = String(g.uuidplayer2).toLowerCase();
+        
+        if (g.status === 'draw') {
+          isDraw = true;
+          outcomeText = "Ничья";
+          borderClass = "history-draw";
+          badgeClass = "badge-draw";
+        } else if ((g.status === 'won_p1' && p1UUID === myUUID) || (g.status === 'won_p2' && p2UUID === myUUID)) {
+          isWon = true;
+          outcomeText = "Победа";
+          borderClass = "history-win";
+          badgeClass = "badge-win";
+        } else {
+          outcomeText = "Поражение";
+          borderClass = "history-loss";
+          badgeClass = "badge-loss";
+        }
+        
+        div.className = `history-item ${borderClass}`;
+        
+        let dateStr = "Неизвестно";
+        if (g.created_at) {
+          const date = new Date(g.created_at);
+          dateStr = date.toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        const opponent = (p1UUID === myUUID) ? (g.player2 || "Бот") : g.player1;
+        
+        div.innerHTML = `
+          <div class="history-details">
+            <strong>Против: ${opponent}</strong>
+            <span>${g.game_type} • ${dateStr}</span>
+          </div>
+          <span class="history-status-badge ${badgeClass}">${outcomeText}</span>
+        `;
+        list.appendChild(div);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function refreshLeaderboard() {
+    try {
+      const res = await apiFetch('/leaderboard/10');
+      if (!res.ok) return;
+      const entries = await res.json() || [];
+      const list = document.getElementById('leaderboardList');
+      list.innerHTML = entries.length ? '' : '<p style="color:#475569; text-align:center; padding: 20px 0;">Лидерборд пуст</p>';
+      
+      entries.forEach((e, idx) => {
+        const div = document.createElement('div');
+        div.className = 'leaderboard-item';
+        
+        const rank = idx + 1;
+        let rankClass = "";
+        if (rank === 1) rankClass = "rank-1";
+        else if (rank === 2) rankClass = "rank-2";
+        else if (rank === 3) rankClass = "rank-3";
+        
+        const ratio = e.win_ratio !== undefined ? parseFloat(e.win_ratio).toFixed(2) : "0.00";
+        const displayLogin = e.login || "Без имени";
+        
+        div.innerHTML = `
+          <div class="leader-rank ${rankClass}">${rank}</div>
+          <div class="leader-info">
+            <strong>${displayLogin}</strong>
+            <span style="font-size:0.6rem;">ID: ${e.uuid ? e.uuid.slice(0, 8) : '...'}</span>
+          </div>
+          <div class="leader-ratio">${ratio} WR</div>
+        `;
+        list.appendChild(div);
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async function joinGame(uuid) {
